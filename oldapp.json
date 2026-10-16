@@ -1,0 +1,87 @@
+{
+  "expo": {
+    "name": "Air2o",
+    "slug": "Air2o",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "air2o",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sgafacc.air2o.control",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "buildNumber": "9",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Air2o needs access to your location to provide accurate services based on your position.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Air2o may need location access even in background for certain features.",
+        "NSMicrophoneUsageDescription": "Air2o uses your microphone to enable voice commands and voice chat with AIRA."
+      }
+    },
+
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
+      ],
+      "edgeToEdgeEnabled": true
+    },
+
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+
+    "plugins": [
+      "expo-router",
+
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBMessaging"
+            ]
+          }
+        }
+      ]
+    ],
+
+    "experiments": {
+      "typedRoutes": true
+    },
+
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d9128dbb-0955-4010-ae63-f9b00aaa1e18"
+      }
+    },
+
+    "owner": "iiiqbets"
+  }
+}
