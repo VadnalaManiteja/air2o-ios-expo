@@ -116,7 +116,7 @@ export default function App() {
     };
     getLocation();
   }, []);
-  
+
   useEffect(() => {
     registerForPushNotificationsAsync();
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
@@ -239,7 +239,7 @@ export default function App() {
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={injectedBeforeLoad}
         javaScriptEnabled
-        cacheEnabled={false}
+        cacheEnabled={true}
         domStorageEnabled
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
