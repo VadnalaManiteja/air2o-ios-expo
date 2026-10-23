@@ -157,11 +157,22 @@ export default function App() {
         try {
           if (window.ReactNativeWebView) {
             window.ReactNativeWebView.postMessage(JSON.stringify(obj));
+<<<<<<< HEAD
           }
         } catch (e) {}
       }
 
       // Identify environment cleanly
+=======
+        } catch (e) {}
+      }
+
+      // 0) Let the website know it runs inside the native app.
+      //    __AIRA_IOS_APP__ enables iOS debug logging in useVoiceAssistant.ts.
+      //    Do NOT set __AIRA_USE_NATIVE_WAKEWORD__: wake word runs in-page
+      //    (openWakeWord WASM, path A in WAKE_WORD_README.md) and that flag
+      //    would disable it.
+>>>>>>> e15cac2 (Fix: syntax error in index.js)
       window.__AIRA_NATIVE_APP__ = true;
       window.__AIRA_IOS_APP__ = ${Platform.OS === 'ios' ? 'true' : 'false'};
 
@@ -223,6 +234,46 @@ export default function App() {
         case 'REQUEST_MIC':
           requestMicPermission();
           break;
+<<<<<<< HEAD
+=======
+
+        case 'REQUEST_MIC': {
+          const granted = await requestMicPermission();
+          sendMicStatusToWebsite(granted);
+          break;
+        }
+
+        case 'MIC_RESULT':
+          console.log('Mic test result:', data);
+          if (DEBUG_ALERTS) {
+            Alert.alert(
+              'Mic test',
+              data.ok ? 'Granted ✅' : `Failed ❌\n${data.error}`
+            );
+          }
+          break;
+
+        // ----- Wake-word bridge (see useVoiceAssistant.ts) -----
+        // Sent on every assistant state transition (IDLE, LISTENING, ...).
+        case 'ASSISTANT_STATE_CHANGE':
+          console.log('[Aira] state ->', data.state);
+          // Wake word / VAD just took the mic: make sure iOS keeps TTS on
+          // the speaker and the session still allows recording.
+          if (micGranted && data.state === 'LISTENING') {
+            configureAudioSession();
+          }
+          break;
+
+        // Native wake-word engine commands. Only sent when
+        // __AIRA_USE_NATIVE_WAKEWORD__ is set (path B). With path A the
+        // engine runs in the page, so there is nothing to start/stop here.
+        case 'wakeword:ready':
+        case 'wakeword:pause':
+        case 'wakeword:resume':
+          console.log('[Aira] wake-word bridge:', data.type);
+          break;
+
+>>>>>>> e15cac2 (Fix: syntax error in index.js)
         default:
           console.log('[Native] Message from website:', data);
       }
