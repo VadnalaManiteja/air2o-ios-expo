@@ -16,6 +16,15 @@
       "buildNumber": "10",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsArbitraryLoadsInWebContent": true,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        },
         "NSLocationWhenInUseUsageDescription": "Air2o needs access to your location to provide accurate services based on your position.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Air2o may need location access even in background for certain features.",
         "NSMicrophoneUsageDescription": "Air2o uses your microphone to enable voice commands and voice chat with AIRA."
