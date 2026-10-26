@@ -27,7 +27,8 @@
         },
         "NSLocationWhenInUseUsageDescription": "Air2o needs access to your location to provide accurate services based on your position.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Air2o may need location access even in background for certain features.",
-        "NSMicrophoneUsageDescription": "Air2o uses your microphone to enable voice commands and voice chat with AIRA."
+        "NSMicrophoneUsageDescription": "Air2o uses your microphone to enable voice commands and voice chat with AIRA.",
+        "NSSpeechRecognitionUsageDescription": "Air2o converts your speech to text for AIRA voice chat and dictation. Conversation recognition may use Apple's speech service."
       }
     },
 
@@ -54,6 +55,13 @@
 
     "plugins": [
       "expo-router",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Air2o uses your microphone for AIRA voice chat, dictation, and the optional Hey AIRA wake phrase.",
+          "speechRecognitionPermission": "Air2o converts your speech to text for AIRA voice chat and dictation. Conversation recognition may use Apple's speech service."
+        }
+      ],
 
       [
         "expo-splash-screen",

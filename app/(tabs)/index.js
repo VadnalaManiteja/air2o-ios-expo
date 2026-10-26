@@ -3,19 +3,26 @@ import { AudioModule } from 'expo-audio';
 import * as Device from 'expo-device';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
+import { requireOptionalNativeModule } from 'expo-modules-core';
+import { NativeVoiceController } from '../../services/nativeVoiceController';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Linking } from 'react-native';
+import { Alert, AppState, Linking, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const WEBSITE_URL = 'https://testcustomer.air2o.net/';
+const WEBSITE_URL = process.env.EXPO_PUBLIC_WEBSITE_URL || 'https://testcustomer.air2o.net/';
+const TRUSTED_ORIGIN = new URL(WEBSITE_URL).origin;
+const isTrustedUrl = (url) => {
+  try { return new URL(url).origin === TRUSTED_ORIGIN; } catch { return false; }
+};
 
 // true  = ask for the microphone as soon as the app opens
 // false = ask only when the website sends { type: 'REQUEST_MIC' }
-const ASK_MIC_ON_START = true;
+const ASK_MIC_ON_START = Platform.OS !== 'ios';
 
 // Show on-screen alerts for mic test results (useful in TestFlight).
 // Set to false before the final App Store release.
-const DEBUG_ALERTS = true;
+const DEBUG_ALERTS = __DEV__;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -28,6 +35,33 @@ Notifications.setNotificationHandler({
 
 export default function App() {
   const webviewRef = useRef(null);
+  const voiceController = useRef(null);
+  const trustedPage = useRef(false);
+
+  const emitVoice = useCallback((payload) => {
+    if (!trustedPage.current) return;
+    webviewRef.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('airaNativeVoice', {detail: ${JSON.stringify(payload)}})); true;`);
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    const capabilities = requireOptionalNativeModule('AiraSpeechCapabilities');
+    const controller = new NativeVoiceController(ExpoSpeechRecognitionModule, emitVoice,
+      language => capabilities?.supportsOnDeviceRecognition(language) === true);
+    voiceController.current = controller;
+    controller.setForeground(AppState.currentState === 'active');
+    const subscription = AppState.addEventListener('change', state => {
+      // iOS permission sheets briefly mark the app inactive. No capture exists
+      // yet; allow the initiating tap to finish after the user grants access.
+      if (!controller.setAppState(state)) return;
+      emitVoice({ event: 'appState', active: state === 'active' });
+    });
+    return () => {
+      subscription.remove();
+      controller.dispose();
+      voiceController.current = null;
+    };
+  }, [emitVoice]);
 
   const [location, setLocation] = useState(null);
   const [fcmToken, setFcmToken] = useState('');
@@ -76,8 +110,10 @@ export default function App() {
 
   // Tell the website the current mic permission state
   const sendMicStatusToWebsite = useCallback((granted) => {
+    if (!trustedPage.current) return;
     const script = `
       (function () {
+        window.__airaMicGranted = ${granted ? 'true' : 'false'};
         window.dispatchEvent(
           new CustomEvent('micPermissionFromApp', {
             detail: { granted: ${granted ? 'true' : 'false'} }
@@ -164,6 +200,11 @@ export default function App() {
   // ---------------------------------------------------------------
   const injectedJS = `
     (function () {
+      if (window.location.origin !== ${JSON.stringify(TRUSTED_ORIGIN)}) return;
+      window.__AIRA_IOS_APP__ = ${Platform.OS === 'ios'};
+      window.__AIRA_NATIVE_VOICE__ = ${Platform.OS === 'ios'};
+      window.__AIRA_VOICE_DEBUG__ = ${__DEV__};
+      window.dispatchEvent(new CustomEvent('airaNativeReady'));
       // 1) Diagnostics: is the mic API available in this WebView?
       var micCheck = {
         type: 'MIC_CHECK',
@@ -209,7 +250,7 @@ export default function App() {
   // SEND LOCATION + FCM TOKEN TO WEBSITE
   // ---------------------------------------------------------------
   useEffect(() => {
-    if (!webViewLoaded) return;
+    if (!webViewLoaded || !trustedPage.current) return;
 
     const appData = {
       fcmToken,
@@ -245,13 +286,24 @@ export default function App() {
   // RECEIVE MESSAGES FROM WEBSITE
   // ---------------------------------------------------------------
   const handleWebViewMessage = async (event) => {
+    if (!trustedPage.current || !isTrustedUrl(event.nativeEvent.url)) return;
     try {
       const data = JSON.parse(event.nativeEvent.data);
 
       switch (data.type) {
+        case 'AIRA_VOICE':
+          if (data.version === 1 && typeof data.requestId === 'string' && data.requestId.length < 150) {
+            await voiceController.current?.handle(data);
+          }
+          break;
+        case 'AIRA_VOICE_READY':
+          webviewRef.current?.injectJavaScript(injectedJS);
+          sendMicStatusToWebsite((await AudioModule.getRecordingPermissionsAsync()).granted);
+          emitVoice({ event: 'appState', active: AppState.currentState === 'active' });
+          break;
         case 'MIC_CHECK':
           console.log('Microphone check:', data);
-          if (!data.mediaDevices || data.getUserMedia !== 'function') {
+          if (Platform.OS !== 'ios' && (!data.mediaDevices || data.getUserMedia !== 'function')) {
             console.log('Microphone API is unavailable inside this WebView.');
             if (DEBUG_ALERTS) {
               Alert.alert('Mic API unavailable', JSON.stringify(data));
@@ -278,7 +330,7 @@ export default function App() {
         default:
           console.log('Message from website:', data);
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('WebView message:', event.nativeEvent.data);
     }
   };
@@ -288,14 +340,22 @@ export default function App() {
       ref={webviewRef}
       source={{ uri: WEBSITE_URL }}
       style={{ flex: 1 }}
+      injectedJavaScriptBeforeContentLoaded={injectedJS}
       injectedJavaScript={injectedJS}
+      onShouldStartLoadWithRequest={(request) => {
+        if (isTrustedUrl(request.url)) return true;
+        if (/^https?:/.test(request.url) && request.isTopFrame !== false) void Linking.openURL(request.url);
+        return false;
+      }}
       javaScriptEnabled
       domStorageEnabled
       allowsInlineMediaPlayback
       mediaPlaybackRequiresUserAction={false}
       // iOS 15+: don't show a second popup for your own website
       mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
-      onLoadStart={() => {
+      onLoadStart={(event) => {
+        trustedPage.current = isTrustedUrl(event.nativeEvent.url);
+        void voiceController.current?.handle({ action: 'cancel', requestId: '*' });
         setWebViewLoaded(false);
         console.log('Website loading...');
       }}
@@ -304,6 +364,10 @@ export default function App() {
         setWebViewLoaded(true);
       }}
       onMessage={handleWebViewMessage}
+      onContentProcessDidTerminate={() => {
+        void voiceController.current?.handle({ action: 'cancel', requestId: '*' });
+        webviewRef.current?.reload();
+      }}
       onError={(event) => {
         console.log('WebView Error:', event.nativeEvent);
       }}
