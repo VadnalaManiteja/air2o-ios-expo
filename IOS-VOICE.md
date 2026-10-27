@@ -61,3 +61,9 @@ Swift compilation, microphone quality, and actual audio routing require an iOS b
 - iOS production Hermes JavaScript export passed. Windows sandbox temporary-file restrictions required setting TEMP/TMP to this project's ignored `node_modules/.cache` directory for that command.
 - Web production build passed with existing warnings (`CI=false`). CI-mode builds fail on existing repository warnings; the full web suite has 64 passing tests and one existing `App.test.js` suite that cannot resolve `react-router-dom` in Jest.
 - No EAS build, deployment, Swift compilation, TestFlight install, or physical-iPhone acceptance run was performed.
+
+## Automatic wake update (2026-10-27)
+
+The paired React application now automatically arms foreground Hey AIRA recognition after authentication/native-bridge readiness. The Enable button and normal status panel are removed. Wake listening pauses for dictation, conversation, and response playback and resumes afterward or on foreground return. Logout stops recognition. First-use iOS system permissions still apply. Errors are shown in the chat page; diagnostics remain debug-only.
+
+This update changes only the web application and documentation; the native speech modules/controller remain the ones already tested on the physical iPhone. Deploy the entire new web build and reload the installed app. No additional native build is needed for an installed binary that already contains both speech modules.
