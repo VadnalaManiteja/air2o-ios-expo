@@ -8,7 +8,6 @@
     "scheme": "air2o",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.sgafacc.air2o.control",
@@ -31,7 +30,6 @@
         "NSSpeechRecognitionUsageDescription": "Air2o converts your speech to text for AIRA voice chat and dictation. Conversation recognition may use Apple's speech service."
       }
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -46,13 +44,11 @@
       ],
       "edgeToEdgeEnabled": true
     },
-
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -62,7 +58,6 @@
           "speechRecognitionPermission": "Air2o converts your speech to text for AIRA voice chat and dictation. Conversation recognition may use Apple's speech service."
         }
       ],
-
       [
         "expo-splash-screen",
         {
@@ -72,17 +67,14 @@
           "backgroundColor": "#ffffff"
         }
       ],
-
       [
         "expo-audio",
         {
           "microphonePermission": "Air2o uses your microphone to enable voice commands and voice chat with AIRA."
         }
       ],
-
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
-
       [
         "expo-build-properties",
         {
@@ -94,20 +86,18 @@
             ]
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
-
     "experiments": {
       "typedRoutes": true
     },
-
     "extra": {
       "router": {},
       "eas": {
         "projectId": "d9128dbb-0955-4010-ae63-f9b00aaa1e18"
       }
     },
-
     "owner": "iiiqbets"
   }
 }
