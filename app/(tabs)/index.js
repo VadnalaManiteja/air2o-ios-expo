@@ -1,3 +1,4 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import messaging from '@react-native-firebase/messaging';
 import { AudioModule } from 'expo-audio';
 import * as Device from 'expo-device';
@@ -180,7 +181,6 @@ export default function App() {
       }
 
       if (finalStatus !== 'granted') {
-        Alert.alert('Notification permission denied');
         return;
       }
 
@@ -291,6 +291,17 @@ export default function App() {
       const data = JSON.parse(event.nativeEvent.data);
 
       switch (data.type) {
+        case 'AIRA_PREPARE_PLAYBACK':
+          if (typeof data.requestId === 'string' && data.requestId.length < 150) {
+            try {
+              await voiceController.current?.handle({ action: 'cancel', requestId: '*' });
+              await voiceController.current?.release();
+              emitVoice({ event: 'playbackReady', requestId: data.requestId });
+            } catch (error) {
+              emitVoice({ event: 'error', requestId: data.requestId, message: error.message });
+            }
+          }
+          break;
         case 'AIRA_VOICE':
           if (data.version === 1 && typeof data.requestId === 'string' && data.requestId.length < 150) {
             await voiceController.current?.handle(data);
@@ -336,6 +347,7 @@ export default function App() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
     <WebView
       ref={webviewRef}
       source={{ uri: WEBSITE_URL }}
@@ -347,6 +359,7 @@ export default function App() {
         if (/^https?:/.test(request.url) && request.isTopFrame !== false) void Linking.openURL(request.url);
         return false;
       }}
+      applicationNameForUserAgent="Air2oSafeArea/1"
       javaScriptEnabled
       domStorageEnabled
       allowsInlineMediaPlayback
@@ -375,5 +388,6 @@ export default function App() {
         console.log('HTTP Error:', event.nativeEvent);
       }}
     />
+    </SafeAreaView>
   );
 }
